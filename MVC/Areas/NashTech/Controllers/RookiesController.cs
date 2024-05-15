@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using OfficeOpenXml;
-using OfficeOpenXml.Style;
 using Person = MVC.Models.Person;
 
 namespace MVC.Areas.NashTech.Controllers

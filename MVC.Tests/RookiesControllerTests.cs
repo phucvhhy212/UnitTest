@@ -230,5 +230,380 @@ namespace MVC.Tests
             _mockPersonService.Verify(service => service.Delete(It.IsAny<Person>()), Times.Never);
             Assert.AreEqual("Index", result.ActionName);
         }
+
+        [Test]
+        public void OldestMember_WhenPersonsExist_ReturnsOldestMemberInView()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(1950, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(1940, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jim", LastName = "Smith", DateOfBirth = new DateTime(1960, 1, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null,null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.OldestMember() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Index", result.ViewName);
+            Assert.IsNotNull(model);
+            Assert.AreEqual(1, model.Count());
+            Assert.AreEqual("Jane", model.First().FirstName);
+            Assert.AreEqual("Doe", model.First().LastName);
+        }
+
+        [Test]
+        public void OldestMember_WhenNoPersonsExist_ReturnsEmptyListInView()
+        {
+            // Arrange
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = 0,
+                Persons = new List<Person>()
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null,null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.OldestMember() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Index", result.ViewName);
+            Assert.IsNotNull(model);
+            Assert.IsEmpty(model);
+        }
+
+        [Test]
+        public void Older_WhenPersonsExist_ReturnsPersonsBornAfter2000()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(2001, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(1999, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jim", LastName = "Smith", DateOfBirth = new DateTime(2002, 1, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null,null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.Older() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Index", result.ViewName);
+            Assert.IsNotNull(model);
+            Assert.AreEqual(2, model.Count());
+            Assert.IsTrue(model.Any(p => p.FirstName == "John" && p.LastName == "Doe"));
+            Assert.IsTrue(model.Any(p => p.FirstName == "Jim" && p.LastName == "Smith"));
+        }
+
+        [Test]
+        public void Older_WhenNoPersonsBornAfter2000_ReturnsEmptyListInView()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(1995, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(1999, 1, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null, null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.Older() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Index", result.ViewName);
+            Assert.IsNotNull(model);
+            Assert.IsEmpty(model);
+        }
+
+        [Test]
+        public void Younger_WhenPersonsExist_ReturnsPersonsBornBefore2000()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(1995, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(2001, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jim", LastName = "Smith", DateOfBirth = new DateTime(1999, 1, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null,null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.Younger() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Index", result.ViewName);
+            Assert.IsNotNull(model);
+            Assert.AreEqual(2, model.Count());
+            Assert.IsTrue(model.Any(p => p.FirstName == "John" && p.LastName == "Doe"));
+            Assert.IsTrue(model.Any(p => p.FirstName == "Jim" && p.LastName == "Smith"));
+        }
+
+        [Test]
+        public void Younger_WhenNoPersonsBornBefore2000_ReturnsEmptyListInView()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(2001, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(2002, 1, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null, null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.Younger() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.AreEqual("Index", result.ViewName);
+            Assert.IsNotNull(model);
+            Assert.IsEmpty(model);
+        }
+
+        [Test]
+        public void Edit_WhenPersonExists_ReturnsPersonInView()
+        {
+            // Arrange
+            var personId = Guid.NewGuid();
+            var persons = new List<Person>
+            {
+                new Person { Id = personId, FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(1995, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(2001, 1, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null, null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.Edit(personId) as ViewResult;
+            var model = result.Model as Person;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(model);
+            Assert.AreEqual(personId, model.Id);
+            Assert.AreEqual("John", model.FirstName);
+            Assert.AreEqual("Doe", model.LastName);
+        }
+
+        [Test]
+        public void Edit_WhenPersonDoesNotExist_ReturnsNullInView()
+        {
+            // Arrange
+            var personId = Guid.NewGuid();
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(1995, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(2001, 1, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null,null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.Edit(personId) as ViewResult;
+            var model = result.Model as Person;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsNull(model);
+        }
+
+        [Test]
+        public void Equal_WhenPersonsExist_ReturnsPersonsBornIn2000()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(2000, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(1999, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jim", LastName = "Smith", DateOfBirth = new DateTime(2000, 6, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null, null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.Equal() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(model);
+            Assert.AreEqual(2, model.Count());
+            Assert.IsTrue(model.Any(p => p.FirstName == "John" && p.LastName == "Doe"));
+            Assert.IsTrue(model.Any(p => p.FirstName == "Jim" && p.LastName == "Smith"));
+        }
+
+        [Test]
+        public void Equal_WhenNoPersonsBornIn2000_ReturnsEmptyListInView()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", DateOfBirth = new DateTime(1995, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", DateOfBirth = new DateTime(1999, 1, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null, null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.Equal() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(model);
+            Assert.IsEmpty(model);
+        }
+
+        [Test]
+        public void Create_WhenCalled_ReturnView()
+        {
+            // Act
+            var result = _controller.Create() as ViewResult;
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsNull(result.Model);
+        }
+
+        [Test]
+        public void ConfirmDelete_WhenCalled_ReturnView()
+        {
+            // Act
+            var result = _controller.ConfirmDelete() as ViewResult;
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsNull(result.Model);
+        }
+
+        [Test]
+        public void MaleMembers_WhenMalePersonsExist_ReturnsMalePersonsInView()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "John", LastName = "Doe", Gender = "Male", DateOfBirth = new DateTime(1995, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", Gender = "Female", DateOfBirth = new DateTime(1999, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Jim", LastName = "Smith", Gender = "Male", DateOfBirth = new DateTime(2000, 6, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null,null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.MaleMembers() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(model);
+            Assert.AreEqual(2, model.Count());
+            Assert.IsTrue(model.Any(p => p.FirstName == "John" && p.LastName == "Doe"));
+            Assert.IsTrue(model.Any(p => p.FirstName == "Jim" && p.LastName == "Smith"));
+        }
+
+        [Test]
+        public void MaleMembers_WhenNoMalePersonsExist_ReturnsEmptyListInView()
+        {
+            // Arrange
+            var persons = new List<Person>
+            {
+                new Person { Id = Guid.NewGuid(), FirstName = "Jane", LastName = "Doe", Gender = "Female", DateOfBirth = new DateTime(1995, 1, 1) },
+                new Person { Id = Guid.NewGuid(), FirstName = "Janet", LastName = "Smith", Gender = "Female", DateOfBirth = new DateTime(2000, 6, 1) }
+            };
+
+            var paginatedPersonList = new PaginatedPersonList
+            {
+                CountTotal = persons.Count,
+                Persons = persons
+            };
+
+            _mockPersonService.Setup(service => service.GetAll(null,null)).Returns(paginatedPersonList);
+
+            // Act
+            var result = _controller.MaleMembers() as ViewResult;
+            var model = result.Model as IEnumerable<Person>;
+
+            // Assert
+            Assert.IsNotNull(result);
+            Assert.IsNotNull(model);
+            Assert.IsEmpty(model);
+        }
     }
 }
+
